@@ -1,0 +1,52 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors / IDEs
+.vscode/
+*.swp
+*.swo
+*~
+.ccls-cache/
+.cache/
+.clangd
+.devcontainer/
+
+# Temporary / log files
+*.bak
+*.tmp
+*.log
+
+# ESP-IDF build output
+build/
+sdkconfig
+sdkconfig.old
+managed_components/
+compile_commands.json
+
+# Generic build artifacts
+*.o
+*.a
+*.elf
+*.bin
+*.map
+
+# Keep the prebuilt TinyKW libraries
+!components/tinykw/**/libtinykw.a
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local files
+trace*
+notes.md
+debug/
