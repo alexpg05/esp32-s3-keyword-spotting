@@ -4,6 +4,10 @@
 
 This project demonstrates keyword spotting on the ESP32-S3-DevKit using the TinyKW library and the INMP441 microphone.
 
+## Demo
+
+https://github.com/user-attachments/assets/86ac1329-a85a-476f-8b70-16d951141226
+
 ## Hardware setup
 
 ![](img/esp32-s3.jpg)
