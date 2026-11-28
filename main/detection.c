@@ -6,27 +6,31 @@
 #include "detection.h"
 #include "tinykw.h"
 #include "keywords_encodings.h"
+#include "led_state.h"
 
 #define SAMPLE_RATE    16000
 #define FRAME_MS       30
 #define FRAME_SAMPLES  (FRAME_MS * SAMPLE_RATE / 1000)
 
 #define DETECTION_THRESHOLD 128
-#define NB_KEYWORDS         7
 
-static QueueHandle_t detectionQueue;
+static StreamBufferHandle_t audioStreamBuffer;
+static QueueHandle_t ledCmdQueue;
 
 static tkw_context tinykw_ctx;
-static const uint8_t *keywords[] = {kw_yellow, kw_red, kw_green, kw_blink_slow, kw_blink_fast, kw_stop, kw_continuous};
-static char *names[] = {"yellow", "red", "green", "blink_slow", "blink_fast", "stop", "continuous"};
+static const uint8_t *keywords[] = {kw_yellow, kw_red, kw_green, kw_hey_computer, kw_stop};
+static char *names[] = {"yellow", "red", "green", "hey computer", "stop"}; // for printing
+static uint8_t led_state[] = {CMD_YELLOW, CMD_RED, CMD_GREEN, CMD_BLINK, CMD_ALL_OFF};
+
+#define NB_KEYWORDS (sizeof(keywords) / sizeof(keywords[0]))
 static uint8_t keyword_ids[NB_KEYWORDS];
 
 static void on_detection(uint8_t keyword_id, void* args)
 {
-    // we just send over the index of the keyword to the queue
+    // we send over the led command associated with the keyword
     uint8_t index = 0;
     while((index < NB_KEYWORDS) && (keyword_ids[index] != keyword_id)) index++;
-    xQueueSend(detectionQueue, &index, 0);
+    xQueueSend(ledCmdQueue, &led_state[index], 0);
     printf("Keyword detected: %s\n", names[index]);
 }
 
@@ -53,12 +57,11 @@ static void initTinyKW(void)
 static void processAudioTask(void* args)
 {
     int16_t pcm_data[FRAME_SAMPLES];
-    StreamBufferHandle_t buffer = (StreamBufferHandle_t) args;
     while(1)
     {
         size_t nb_received = 0;
         while (nb_received < sizeof(pcm_data)) {
-            nb_received += xStreamBufferReceive(buffer, (uint8_t *)pcm_data + nb_received, 
+            nb_received += xStreamBufferReceive(audioStreamBuffer, (uint8_t *)pcm_data + nb_received, 
                                         sizeof(pcm_data) - nb_received, portMAX_DELAY);
         }
         tkw_status status;
@@ -67,15 +70,10 @@ static void processAudioTask(void* args)
     }
 }
 
-void startKeywordDetectionTask(StreamBufferHandle_t audio_buffer, uint8_t priority)
+void startKeywordDetectionTask(StreamBufferHandle_t audio_buffer, QueueHandle_t led_cmd_queue, uint8_t priority)
 {
-    detectionQueue = xQueueCreate(3, sizeof(uint8_t));
+    audioStreamBuffer = audio_buffer;
+    ledCmdQueue = led_cmd_queue;
     initTinyKW();
-    // Pin the processing task to core 1
-    xTaskCreatePinnedToCore(processAudioTask, "processAudioTask", 4096, (void *)audio_buffer, priority, NULL, 1);
-}
-
-QueueHandle_t getDetectionQueue(void)
-{
-    return detectionQueue;
+    xTaskCreatePinnedToCore(processAudioTask, "processAudioTask", 4096, NULL, priority, NULL, 1); // Pin to core 1
 }

@@ -8,10 +8,7 @@ This task reads audio data using the i2s driver and places it in a streambuffer
 
 #define SAMPLE_RATE     16000
 #define FRAME_SAMPLES   (30 * SAMPLE_RATE / 1000) // we read by chunk of 30 ms
-#define FRAME_BYTES     (sizeof(int16_t) * FRAME_SAMPLES)
-#define BUFFER_BYTES    (4 * FRAME_BYTES) // we store 4 framess
 
-static StreamBufferHandle_t buff_pcm16;
 static i2s_chan_handle_t rx_chan;
 
 static void init_i2s_receive(int pin_sck, int pin_ws, int pin_sd)
@@ -41,6 +38,7 @@ static void init_i2s_receive(int pin_sck, int pin_ws, int pin_sd)
 
 static void i2s_read_task(void *args)
 {
+    StreamBufferHandle_t audioBuffer = (StreamBufferHandle_t)args;
     ESP_ERROR_CHECK(i2s_channel_enable(rx_chan));
     size_t r_bytes = 0;
     int32_t raw_data[FRAME_SAMPLES];
@@ -52,21 +50,15 @@ static void i2s_read_task(void *args)
             {
                 pcm_data[i] = raw_data[i] >> 16;
             }
-            xStreamBufferSend(buff_pcm16, pcm_data, n * sizeof(int16_t), 0);
+            xStreamBufferSend(audioBuffer, pcm_data, n * sizeof(int16_t), 0);
         } else {
             printf("Read Task: i2s read failed\n");
         }
     }
 }
 
-void startAudioTask(int pin_sck, int pin_ws, int pin_sd, uint8_t priority)
+void startAudioTask(int pin_sck, int pin_ws, int pin_sd, StreamBufferHandle_t audio_buffer, uint8_t priority)
 {
-    buff_pcm16 = xStreamBufferCreate(BUFFER_BYTES, FRAME_BYTES);
     init_i2s_receive(pin_sck, pin_ws, pin_sd);
-    xTaskCreate(i2s_read_task, "i2s_read_task", 4096, NULL, priority, NULL);
-}
-
-StreamBufferHandle_t getAudioStreamBuffer(void)
-{
-    return buff_pcm16;
+    xTaskCreate(i2s_read_task, "i2s_read_task", 4096, (void*)audio_buffer, priority, NULL);
 }

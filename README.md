@@ -54,6 +54,7 @@ Path to the library can be modified in `components/tinykw/CMakeLists.txt` to use
 Keywords encodings can be retrieved from the [TinyKW Console](https://voyelle.io/tinykw/encoder). 
 Then you can add them to or replace existing ones by modifying `main/keywords_encodings.h` and `main/keywords_encodings.c`.
 Please note that keywords encodings must match the language of the TinyKW library.
+If needed, detection threshold can be modified to reach desired sensitivity. Refer to TinyKW documentation for more details.
 
 ## License
 

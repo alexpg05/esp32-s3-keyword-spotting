@@ -4,7 +4,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/stream_buffer.h"
 
-void startAudioTask(int pin_sck, int pin_ws, int pin_sd, uint8_t priority);
-StreamBufferHandle_t getAudioStreamBuffer(void);
+void startAudioTask(int pin_sck, int pin_ws, int pin_sd, StreamBufferHandle_t audio_buffer, uint8_t priority);
 
 #endif
